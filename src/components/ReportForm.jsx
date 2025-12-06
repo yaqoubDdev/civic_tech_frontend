@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import LocationPicker from './LocationPicker';
 import PhotoUpload from './PhotoUpload';
+import NearbyReports from './NearbyReports';
+import NearbyReports from './NearbyReports';
 import { Send } from 'lucide-react';
 
 // Category and type mappings
@@ -200,6 +202,26 @@ const ReportForm = ({ onSubmit, onCancel }) => {
 
       {/* Location Picker */}
       <LocationPicker onLocationSelect={handleLocationChange} />
+
+      {/* Nearby Reports */}
+      {formData.location && (
+        <NearbyReports 
+          location={formData.location} 
+          onUpvote={(id) => {
+            alert(`Upvoted report #${id}! Thank you for verifying.`);
+            // In a real app, we might redirect to the report page or update the UI
+          }} 
+        />
+      )}
+
+      {/* Nearby Reports (Deduplication) */}
+      <NearbyReports 
+        location={formData.location} 
+        onUpvote={(id) => {
+          alert(`Upvoted report #${id}! Thank you for verifying.`);
+          // In a real app, this would call an API and maybe redirect
+        }} 
+      />
 
       {/* Photo Upload */}
       <PhotoUpload onPhotoChange={handlePhotoChange} maxPhotos={3} />
