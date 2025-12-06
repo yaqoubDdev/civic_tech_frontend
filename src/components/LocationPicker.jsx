@@ -1,7 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
+import { Button } from "@/components/ui/button"
+import { Label } from "@/components/ui/label"
+
+// Component to recenter map when position changes
+function RecenterMap({ position }) {
+  const map = useMap();
+  useEffect(() => {
+    map.flyTo(position, map.getZoom());
+  }, [position, map]);
+  return null;
+}
+
 
 // Fix for default marker icon in React-Leaflet
 delete L.Icon.Default.prototype._getIconUrl;
@@ -17,7 +29,7 @@ function DraggableMarker({ position, setPosition }) {
 
   useMapEvents({
     click(e) {
-      setPosition(e.latlng);
+      setPosition([e.latlng.lat, e.latlng.lng]);
     },
   });
 
@@ -27,7 +39,9 @@ function DraggableMarker({ position, setPosition }) {
       position={position}
       eventHandlers={{
         dragend(e) {
-          setPosition(e.target.getLatLng());
+          const marker = e.target;
+          const position = marker.getLatLng();
+          setPosition([position.lat, position.lng]);
         },
       }}
     />
@@ -35,7 +49,7 @@ function DraggableMarker({ position, setPosition }) {
 }
 
 const LocationPicker = ({ onLocationSelect }) => {
-  const [position, setPosition] = useState([8.4657, -13.2317]); // Default: Freetown
+  const [position, setPosition] = useState([8.485488, -13.226863]); // Default: Freetown
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -71,21 +85,21 @@ const LocationPicker = ({ onLocationSelect }) => {
     if (onLocationSelect) {
       onLocationSelect(position);
     }
-  }, [position, onLocationSelect]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [position]); // Only depend on position, not onLocationSelect
 
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <label className="text-sm font-medium text-gray-700">
-          Select Location
-        </label>
-        <button
+        <Label>Select Location</Label>
+        <Button
           onClick={getCurrentLocation}
           disabled={loading}
-          className="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed"
+          variant="secondary"
+          size="sm"
         >
           {loading ? 'Getting location...' : 'Use My Location'}
-        </button>
+        </Button>
       </div>
 
       {error && (
@@ -108,6 +122,7 @@ const LocationPicker = ({ onLocationSelect }) => {
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
+        <RecenterMap position={position} />
         <DraggableMarker position={position} setPosition={setPosition} />
       </MapContainer>
 

@@ -3,6 +3,12 @@ import LocationPicker from './LocationPicker';
 import PhotoUpload from './PhotoUpload';
 import NearbyReports from './NearbyReports';
 import { Send } from 'lucide-react';
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Card, CardContent } from "@/components/ui/card"
 
 // Category and type mappings
 const CATEGORIES = {
@@ -30,7 +36,7 @@ const ReportForm = ({ onSubmit, onCancel }) => {
     description: '',
     category: '',
     type: '',
-    location: [8.4657, -13.2317],
+    location: [8.485488, -13.226863],
     photos: [],
   });
 
@@ -100,7 +106,7 @@ const ReportForm = ({ onSubmit, onCancel }) => {
         description: '',
         category: '',
         type: '',
-        location: [8.4657, -13.2317],
+        location: [8.485488, -13.226863],
         photos: [],
       });
     } catch (error) {
@@ -116,86 +122,98 @@ const ReportForm = ({ onSubmit, onCancel }) => {
   return (
     <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl mx-auto">
       {/* Title */}
-      <div>
-        <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
+      <div className="space-y-2">
+        <Label htmlFor="title">
           Title <span className="text-red-500">*</span>
-        </label>
-        <input
+        </Label>
+        <Input
           type="text"
           id="title"
           name="title"
           value={formData.title}
           onChange={handleChange}
           placeholder="Brief description of the issue"
-          className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-            errors.title ? 'border-red-500' : 'border-gray-300'
-          }`}
+          className={errors.title ? 'border-red-500' : ''}
         />
         {errors.title && <p className="text-sm text-red-600 mt-1">{errors.title}</p>}
       </div>
 
       {/* Category */}
-      <div>
-        <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
+      <div className="space-y-2">
+        <Label htmlFor="category">
           Category <span className="text-red-500">*</span>
-        </label>
-        <select
-          id="category"
-          name="category"
-          value={formData.category}
-          onChange={handleChange}
-          className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-            errors.category ? 'border-red-500' : 'border-gray-300'
-          }`}
+        </Label>
+        <Select 
+          value={formData.category || undefined} 
+          onValueChange={(value) => {
+            setFormData((prev) => ({
+              ...prev,
+              category: value,
+              type: '', // Reset type when category changes
+            }));
+            if (errors.category) {
+              setErrors((prev) => ({ ...prev, category: null }));
+            }
+          }}
         >
-          <option value="">Select a category</option>
-          {Object.entries(CATEGORIES).map(([key, { label }]) => (
-            <option key={key} value={key}>
-              {label}
-            </option>
-          ))}
-        </select>
+          <SelectTrigger className={errors.category ? 'border-red-500' : ''}>
+            <SelectValue placeholder="Select a category" />
+          </SelectTrigger>
+          <SelectContent>
+            {Object.entries(CATEGORIES).map(([key, { label }]) => (
+              <SelectItem key={key} value={key}>
+                {label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         {errors.category && <p className="text-sm text-red-600 mt-1">{errors.category}</p>}
       </div>
 
       {/* Type */}
-      <div>
-        <label htmlFor="type" className="block text-sm font-medium text-gray-700 mb-1">
+      <div className="space-y-2">
+        <Label htmlFor="type">
           Type <span className="text-red-500">*</span>
-        </label>
-        <select
-          id="type"
-          name="type"
-          value={formData.type}
-          onChange={handleChange}
+        </Label>
+        <Select 
+          value={formData.type || undefined} 
+          onValueChange={(value) => {
+            setFormData((prev) => ({
+              ...prev,
+              type: value,
+            }));
+            if (errors.type) {
+              setErrors((prev) => ({ ...prev, type: null }));
+            }
+          }}
           disabled={!formData.category}
-          className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed ${
-            errors.type ? 'border-red-500' : 'border-gray-300'
-          }`}
         >
-          <option value="">Select a type</option>
-          {availableTypes.map((type) => (
-            <option key={type} value={type}>
-              {type}
-            </option>
-          ))}
-        </select>
+          <SelectTrigger className={errors.type ? 'border-red-500' : ''}>
+            <SelectValue placeholder="Select a type" />
+          </SelectTrigger>
+          <SelectContent>
+            {availableTypes.map((type) => (
+              <SelectItem key={type} value={type}>
+                {type}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         {errors.type && <p className="text-sm text-red-600 mt-1">{errors.type}</p>}
       </div>
 
       {/* Description */}
-      <div>
-        <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
+      <div className="space-y-2">
+        <Label htmlFor="description">
           Description (Optional)
-        </label>
-        <textarea
+        </Label>
+        <Textarea
           id="description"
           name="description"
           value={formData.description}
           onChange={handleChange}
           rows={4}
           placeholder="Provide more details about the issue..."
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         />
       </div>
 
@@ -220,22 +238,22 @@ const ReportForm = ({ onSubmit, onCancel }) => {
 
       {/* Action Buttons */}
       <div className="flex gap-3 pt-4">
-        <button
+        <Button
           type="submit"
           disabled={submitting}
-          className="flex-1 flex items-center justify-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+          className="flex-1"
         >
-          <Send size={20} />
+          <Send size={20} className="mr-2" />
           {submitting ? 'Submitting...' : 'Submit Report'}
-        </button>
+        </Button>
         {onCancel && (
-          <button
+          <Button
             type="button"
+            variant="outline"
             onClick={onCancel}
-            className="px-6 py-3 border border-gray-300 rounded-lg font-medium hover:bg-gray-50 transition-colors"
           >
             Cancel
-          </button>
+          </Button>
         )}
       </div>
     </form>

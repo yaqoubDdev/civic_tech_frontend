@@ -3,13 +3,13 @@ import Map from '../components/Map';
 
 const MapPage = () => {
   const sampleMarkers = [
-    { position: [8.4657, -13.2317], popup: 'Freetown, Sierra Leone' }
+    { position: [8.485488, -13.226863], popup: 'Freetown, Sierra Leone' }
   ];
 
   return (
     <div className="p-4">
       <h1 className="text-2xl font-bold mb-4">Community Map</h1>
-      <Map center={[8.4657, -13.2317]} zoom={13} markers={sampleMarkers} />
+      <Map center={[8.485488, -13.226863]} zoom={13} markers={sampleMarkers} />
     </div>
   );
 };

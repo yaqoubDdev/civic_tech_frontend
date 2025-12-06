@@ -3,30 +3,36 @@ import { useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet.heat';
 
-const HeatmapLayer = ({ points }) => {
+const HeatmapLayer = ({ reports }) => {
   const map = useMap();
 
   useEffect(() => {
-    if (!points || points.length === 0) return;
+    if (!reports || reports.length === 0) return;
 
-    // Transform points to [lat, lng, intensity]
-    // For now, we assume points are [lat, lng] and intensity is 1
-    // Or points could be objects with lat, lng, priority
-    const heatPoints = points.map(p => {
-      if (Array.isArray(p)) return [...p, 0.5]; // Default intensity
-      return [p.lat, p.lng, p.intensity || 0.5];
-    });
+    // Extract points: [lat, lng, intensity]
+    // Intensity based on priorityScore (normalized 0-1 if needed, or just raw count)
+    const points = reports.map(report => [
+      report.location[0],
+      report.location[1],
+      report.priorityScore ? report.priorityScore / 10 : 0.5 // Example intensity
+    ]);
 
-    const heat = L.heatLayer(heatPoints, {
+    const heat = L.heatLayer(points, {
       radius: 25,
       blur: 15,
       maxZoom: 17,
+      gradient: {
+        0.4: 'blue',
+        0.6: 'lime',
+        0.8: 'yellow',
+        1.0: 'red'
+      }
     }).addTo(map);
 
     return () => {
       map.removeLayer(heat);
     };
-  }, [map, points]);
+  }, [map, reports]);
 
   return null;
 };
