@@ -1,18 +1,46 @@
-import React, { useState, useEffect } from 'react';
-import { MapContainer, TileLayer } from 'react-leaflet';
+import React, { useState, useEffect, useRef } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { AlertTriangle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import HeatmapLayer from '../components/HeatmapLayer';
 import PriorityTable from '../components/PriorityTable';
+import StatusUpdater from '../components/StatusUpdater';
 import { getReports, updateReportStatus } from '../services/api';
 import Header from '../components/Header';
+import confetti from 'canvas-confetti';
+
+// Fix Leaflet default marker icon
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+});
+
+// Component to handle map view changes
+const MapViewController = ({ center, zoom }) => {
+  const map = useMap();
+  
+  useEffect(() => {
+    if (center && zoom) {
+      map.setView(center, zoom);
+    }
+  }, [center, zoom, map]);
+  
+  return null;
+};
 
 const Dashboard = () => {
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [selectedReport, setSelectedReport] = useState(null);
+  const [mapCenter, setMapCenter] = useState([8.485488, -13.226863]);
+  const [mapZoom, setMapZoom] = useState(13);
+  const mapRef = useRef(null);
 
   useEffect(() => {
     fetchReports();
@@ -74,6 +102,12 @@ const Dashboard = () => {
     }
   };
 
+  const handleReportClick = (report) => {
+    setSelectedReport(report);
+    setMapCenter(report.location);
+    setMapZoom(16); // Zoom in closer when clicking a report
+  };
+
   const escalatedCount = reports.filter(r => r.priorityScore >= 8 && r.status !== 'Resolved').length;
 
   if (loading) {
@@ -84,7 +118,7 @@ const Dashboard = () => {
     <>
       <Header />
       <div className="min-h-screen bg-background p-6">
-        <div className="max-w-7xl mx-auto space-y-6">
+        <div className="max-w-[1800px] mx-auto space-y-6">
           {escalatedCount > 0 && (
             <Card className="border-l-4 border-l-destructive bg-destructive/10">
               <CardContent className="flex items-center gap-3 p-4">
@@ -112,30 +146,73 @@ const Dashboard = () => {
             </Card>
           </header>
 
-          {/* Heatmap Section */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Issue Heatmap</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[400px] rounded-lg overflow-hidden border">
-                <MapContainer 
-                  center={[8.485488, -13.226863]} 
-                  zoom={15} 
-                  style={{ height: '100%', width: '100%' }}
-                >
-                  <TileLayer
-                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                  />
-                  <HeatmapLayer reports={reports} />
-                </MapContainer>
-              </div>
-            </CardContent>
-          </Card>
+          <div className="grid grid-cols-1 lg:grid-cols-[40%_60%] gap-8 items-start">
+            {/* Heatmap Section - Sticky on Desktop */}
+            <div className="lg:sticky lg:top-6 order-2 lg:order-1">
+              <Card className="h-full shadow-md">
+                <CardHeader>
+                  <CardTitle>Issue Heatmap & Markers</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-[500px] rounded-lg overflow-hidden border">
+                    <MapContainer 
+                      center={mapCenter} 
+                      zoom={mapZoom} 
+                      style={{ height: '100%', width: '100%' }}
+                      ref={mapRef}
+                    >
+                      <TileLayer
+                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                      />
+                      <MapViewController center={mapCenter} zoom={mapZoom} />
+                      <HeatmapLayer reports={reports} />
+                      
+                      {/* Individual markers for each report */}
+                      {reports.map((report) => (
+                        <Marker 
+                          key={report.id} 
+                          position={report.location}
+                          eventHandlers={{
+                            click: () => handleReportClick(report),
+                          }}
+                        >
+                          <Popup maxWidth={300}>
+                            <div className="p-2">
+                              {report.image && (
+                                <img 
+                                  src={report.image} 
+                                  alt={report.title}
+                                  className="w-full h-32 object-cover rounded mb-2"
+                                />
+                              )}
+                              <h3 className="font-bold text-base">{report.title}</h3>
+                              <p className="text-sm text-gray-600 mt-1">Category: {report.category}</p>
+                              <p className="text-sm text-gray-600">Status: {report.status}</p>
+                              <p className="text-sm text-gray-600">Priority: {report.priorityScore}</p>
+                              <p className="text-sm text-gray-600">Votes: {report.votes}</p>
+                            </div>
+                          </Popup>
+                        </Marker>
+                      ))}
+                    </MapContainer>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    💡 Click on a report in the table to focus the map
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
 
-          {/* Priority Table Section */}
-          <PriorityTable reports={reports} onStatusChange={handleStatusChange} />
+            {/* Priority Table Section */}
+            <div className="min-w-0 order-1 lg:order-2"> {/* Prevent table overflow */}
+              <PriorityTable 
+                reports={reports} 
+                onStatusChange={handleStatusChange}
+                onReportClick={handleReportClick}
+              />
+            </div>
+          </div>
         </div>
       </div>
     </>
