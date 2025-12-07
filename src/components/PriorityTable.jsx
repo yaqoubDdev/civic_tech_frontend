@@ -5,7 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
-const PriorityTable = ({ reports, onStatusChange }) => {
+const PriorityTable = ({ reports, onStatusChange, onReportClick }) => {
   const [sortConfig, setSortConfig] = useState({ key: 'priorityScore', direction: 'desc' });
   const [filter, setFilter] = useState('all'); // all, escalated, water
 
@@ -58,7 +58,7 @@ const PriorityTable = ({ reports, onStatusChange }) => {
       </div>
 
       <div className="overflow-x-auto">
-        <Table>
+        <Table className="w-full">
           <TableHeader>
             <TableRow>
               <TableHead className="w-[80px]">ID</TableHead>
@@ -76,7 +76,11 @@ const PriorityTable = ({ reports, onStatusChange }) => {
           </TableHeader>
           <TableBody>
             {sortedReports.map((report) => (
-              <TableRow key={report.id}>
+              <TableRow 
+                key={report.id}
+                onClick={() => onReportClick && onReportClick(report)}
+                className="cursor-pointer hover:bg-muted/50 transition-colors"
+              >
                 <TableCell className="font-medium">#{report.id}</TableCell>
                 <TableCell>
                   {report.image ? (
