@@ -144,7 +144,7 @@ const ReportForm = ({ onSubmit, onCancel }) => {
           Category <span className="text-red-500">*</span>
         </Label>
         <Select 
-          value={formData.category || undefined} 
+          value={formData.category || ''} 
           onValueChange={(value) => {
             setFormData((prev) => ({
               ...prev,
@@ -176,7 +176,8 @@ const ReportForm = ({ onSubmit, onCancel }) => {
           Type <span className="text-red-500">*</span>
         </Label>
         <Select 
-          value={formData.type || undefined} 
+          key={formData.category} // Force re-render when category changes
+          value={formData.type || ''} 
           onValueChange={(value) => {
             setFormData((prev) => ({
               ...prev,

@@ -1,11 +1,43 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { MapPin, Users, TrendingUp, CheckCircle, AlertCircle, Zap } from 'lucide-react';
+import { getReports } from '../services/api';
+import Header from '../components/Header';
 
 const Landing = () => {
+  const [recentReports, setRecentReports] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchRecentReports();
+  }, []);
+
+  const fetchRecentReports = async () => {
+    try {
+      const data = await getReports();
+      // Get 6 most recent reports
+      const recent = data.slice(0, 6).map(report => ({
+        id: report._id,
+        title: report.title || `${report.category} - ${report.type}`,
+        category: report.category,
+        status: report.status,
+        priority: report.priorityScore || 0,
+        location: report.location.address || `${report.location.lat.toFixed(4)}, ${report.location.lng.toFixed(4)}`,
+        image: report.image, // Include image URL
+      }));
+      setRecentReports(recent);
+    } catch (error) {
+      console.error('Error fetching recent reports:', error);
+      // Use empty array on error
+      setRecentReports([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const features = [
     {
       icon: MapPin,
@@ -37,7 +69,9 @@ const Landing = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
+    <>
+      <Header />
+      <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
       {/* Hero Section */}
       <div className="relative overflow-hidden">
         <div className="absolute inset-0 bg-grid-pattern opacity-5"></div>
@@ -69,6 +103,14 @@ const Landing = () => {
                 <Link to="/map">
                   <MapPin className="mr-2 h-5 w-5" />
                   View Issue Map
+                </Link>
+              </Button>
+            </div>
+            
+            <div className="pt-4">
+              <Button asChild variant="ghost" size="sm">
+                <Link to="/dashboard" className="text-muted-foreground">
+                  Government Dashboard →
                 </Link>
               </Button>
             </div>
@@ -118,6 +160,74 @@ const Landing = () => {
         </div>
       </div>
 
+      {/* Recent Reports Section */}
+      <div className="bg-muted/30 border-y">
+        <div className="container mx-auto px-4 py-20">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">Recent Reports</h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              See what issues your community is reporting
+            </p>
+          </div>
+
+          {loading ? (
+            <div className="text-center text-muted-foreground">Loading reports...</div>
+          ) : recentReports.length === 0 ? (
+            <div className="text-center text-muted-foreground">No reports yet. Be the first to report an issue!</div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+              {recentReports.map((report) => (
+                <Card key={report.id} className="hover:shadow-lg transition-shadow overflow-hidden">
+                  {report.image && (
+                    <img 
+                      src={report.image} 
+                      alt={report.title}
+                      className="w-full h-48 object-cover"
+                    />
+                  )}
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <CardTitle className="text-lg">{report.title}</CardTitle>
+                        <CardDescription className="capitalize">{report.location}</CardDescription>
+                      </div>
+                      <Badge variant={
+                        report.status === 'Resolved' ? 'secondary' : 
+                        report.status === 'Scheduled' ? 'default' : 
+                        'outline'
+                      }>
+                        {report.status}
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">{report.category}</span>
+                      <Badge variant={
+                        report.priority >= 8 ? 'destructive' : 
+                        report.priority >= 5 ? 'default' : 
+                        'secondary'
+                      }>
+                        Priority: {report.priority}
+                      </Badge>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+
+          <div className="text-center mt-12">
+            <Button asChild size="lg" variant="outline">
+              <Link to="/map">
+                <MapPin className="mr-2 h-5 w-5" />
+                View All Reports on Map
+              </Link>
+            </Button>
+          </div>
+        </div>
+      </div>
+
       {/* CTA Section */}
       <div className="bg-primary text-primary-foreground">
         <div className="container mx-auto px-4 py-16">
@@ -149,6 +259,7 @@ const Landing = () => {
         </div>
       </footer>
     </div>
+    </>
   );
 };
 

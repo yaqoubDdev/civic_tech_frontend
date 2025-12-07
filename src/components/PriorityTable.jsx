@@ -61,12 +61,8 @@ const PriorityTable = ({ reports, onStatusChange }) => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead 
-                className="cursor-pointer hover:bg-muted/50"
-                onClick={() => handleSort('id')}
-              >
-                <div className="flex items-center gap-1">ID {getSortIcon('id')}</div>
-              </TableHead>
+              <TableHead className="w-[80px]">ID</TableHead>
+              <TableHead className="w-[100px]">Image</TableHead>
               <TableHead>Title / Category</TableHead>
               <TableHead 
                 className="cursor-pointer hover:bg-muted/50"
@@ -82,6 +78,19 @@ const PriorityTable = ({ reports, onStatusChange }) => {
             {sortedReports.map((report) => (
               <TableRow key={report.id}>
                 <TableCell className="font-medium">#{report.id}</TableCell>
+                <TableCell>
+                  {report.image ? (
+                    <img 
+                      src={report.image} 
+                      alt={report.title}
+                      className="w-16 h-16 object-cover rounded"
+                    />
+                  ) : (
+                    <div className="w-16 h-16 bg-muted rounded flex items-center justify-center text-muted-foreground text-xs">
+                      No image
+                    </div>
+                  )}
+                </TableCell>
                 <TableCell>
                   <div className="font-medium">{report.title}</div>
                   <div className="text-sm text-muted-foreground capitalize">{report.category} - {report.type}</div>
