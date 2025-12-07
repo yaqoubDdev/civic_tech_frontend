@@ -1,55 +1,68 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Camera, X, Image as ImageIcon } from 'lucide-react';
 
 const PhotoUpload = ({ onPhotoChange, maxPhotos = 3 }) => {
-  const [photos, setPhotos] = useState([]);
-  const [previews, setPreviews] = useState([]);
+  const [photos, setPhotos] = useState([]); // Store File objects
+  const [previews, setPreviews] = useState([]); // Store preview URLs
+
+  // Notify parent when photos change
+  useEffect(() => {
+    if (onPhotoChange) {
+      onPhotoChange(photos);
+    }
+  }, [photos]); // Only call when photos actually change
 
   const handleFileChange = (e) => {
     const files = Array.from(e.target.files);
     
     if (photos.length + files.length > maxPhotos) {
+      // Keep alert for immediate feedback on file selection
       alert(`You can only upload up to ${maxPhotos} photos`);
       return;
     }
 
+    // Validate file types and sizes
+    const validFiles = [];
+    const newPreviews = [];
+    let hasErrors = false;
+
     files.forEach((file) => {
       if (!file.type.startsWith('image/')) {
-        alert('Please select only image files');
+        hasErrors = true;
         return;
       }
 
-      const reader = new FileReader();
-      
-      reader.onloadend = () => {
-        const base64String = reader.result;
-        
-        setPhotos((prev) => {
-          const updated = [...prev, base64String];
-          if (onPhotoChange) {
-            onPhotoChange(updated);
-          }
-          return updated;
-        });
+      // Check file size (5MB limit)
+      if (file.size > 5 * 1024 * 1024) {
+        alert(`${file.name} is too large. Maximum file size is 5MB.`);
+        hasErrors = true;
+        return;
+      }
 
-        setPreviews((prev) => [...prev, base64String]);
-      };
-
-      reader.readAsDataURL(file);
+      validFiles.push(file);
+      // Create object URL for preview
+      newPreviews.push(URL.createObjectURL(file));
     });
+
+    if (hasErrors && validFiles.length === 0) {
+      alert('Please select valid image files (JPG, PNG, WebP)');
+      return;
+    }
+
+    if (validFiles.length > 0) {
+      setPhotos((prev) => [...prev, ...validFiles]);
+      setPreviews((prev) => [...prev, ...newPreviews]);
+    }
 
     // Reset input
     e.target.value = '';
   };
 
   const removePhoto = (index) => {
-    setPhotos((prev) => {
-      const updated = prev.filter((_, i) => i !== index);
-      if (onPhotoChange) {
-        onPhotoChange(updated);
-      }
-      return updated;
-    });
+    // Revoke object URL to free memory
+    URL.revokeObjectURL(previews[index]);
+    
+    setPhotos((prev) => prev.filter((_, i) => i !== index));
     setPreviews((prev) => prev.filter((_, i) => i !== index));
   };
 
